@@ -29,13 +29,22 @@ function isRateLimited(ip: string): boolean {
 // Helper: Check if most sentences are English
 function isMostlyEnglish(text: string, threshold = 0.2): boolean {
   // Split by sentence-ending punctuation or newlines
-  const sentences = text.split(/[.!?\\n]+/).map(s => s.trim()).filter(Boolean);
+  const sentences = text.split(/[.!?\n]+/).map(s => s.trim()).filter(Boolean);
   if (sentences.length === 0) return false;
+
+  // Ignore short "sentences" (fewer than 5 words) to prevent misclassification
+  const longEnoughSentences = sentences.filter(s => s.split(' ').length >= 5);
+
+  // If there are no long sentences, fall back to checking the whole text
+  if (longEnoughSentences.length === 0) {
+      return franc(text) === 'eng';
+  }
+
   let nonEnglish = 0;
-  for (const sentence of sentences) {
+  for (const sentence of longEnoughSentences) {
     if (franc(sentence) !== 'eng') nonEnglish++;
   }
-  const percentNonEnglish = nonEnglish / sentences.length;
+  const percentNonEnglish = nonEnglish / longEnoughSentences.length;
   return percentNonEnglish <= threshold;
 }
 
